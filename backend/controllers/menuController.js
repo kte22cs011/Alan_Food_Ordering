@@ -1,26 +1,91 @@
-const MenuItem = require('../models/menuItem');
+const RestaurantModel = require("../models/Restaurant");
 
-exports.getMenu = async (req, res) => {
+// Fetch menu of a specific restaurant
+exports.getMenuByRestaurant = async (req, res) => {
   try {
-    const menu = await MenuItem.find({ restaurant_id: req.params.restaurant_id });
-    res.json(menu);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { restaurantId } = req.params;
+    const restaurant = await RestaurantModel.findById(restaurantId);
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "No such restaurant found" });
+    }
+
+    res.json(restaurant.menuItems);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to retrieve menu" });
   }
 };
 
+// Add new item to restaurant menu
 exports.addMenuItem = async (req, res) => {
   try {
-    const { name, price, category } = req.body;
-    const menuItem = new MenuItem({
-      name,
-      price,
-      category,
-      restaurant_id: req.params.restaurant_id
-    });
-    await menuItem.save();
-    res.status(201).json(menuItem);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+    const { restaurantId } = req.params;
+    const restaurant = await RestaurantModel.findById(restaurantId);
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not located" });
+    }
+
+    const itemToAdd = req.body;
+    restaurant.menuItems.push(itemToAdd);
+
+    await restaurant.save();
+    res.status(201).json(restaurant.menuItems);
+  } catch (error) {
+    res.status(500).json({ message: "Unable to add menu item" });
+  }
+};
+
+// Modify an existing menu item
+exports.updateMenuItem = async (req, res) => {
+  try {
+    const { restaurantId, itemId } = req.params;
+    const restaurant = await RestaurantModel.findById(restaurantId);
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not located" });
+    }
+
+    const item = restaurant.menuItems.id(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Menu item not found" });
+    }
+
+    item.name = req.body.name || item.name;
+    item.price = req.body.price || item.price;
+    item.description = req.body.description || item.description;
+    item.available = req.body.available ?? item.available;
+
+    await restaurant.save();
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ message: "Unable to update menu item" });
+  }
+};
+
+// Remove a menu item
+exports.deleteMenuItem = async (req, res) => {
+  try {
+    const { restaurantId, itemId } = req.params;
+
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found" });
+    }
+
+    const index = restaurant.menuItems.findIndex(
+      (menuItem) => menuItem._id.toString() === itemId
+    );
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Menu item not found" });
+    }
+
+    restaurant.menuItems.splice(index, 1);
+    await restaurant.save();
+
+    res.json({ message: "Menu item deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete menu item" });
   }
 };

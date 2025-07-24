@@ -1,33 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const restaurantController = require('../controllers/restaurantController');
-const { authMiddleware, isOwner, requireRoles } = require('../middleware/auth');
 
-// Public routes
-router.get('/', restaurantController.getAllRestaurants);
+const {
+  createRestaurant,
+  getAllRestaurants,
+  getRestaurantById,
+  updateRestaurant,
+  deleteRestaurant,
+} = require('../controllers/restaurantController');
 
-// Protected routes
-router.post(
-  '/',
-  authMiddleware,          // Verify JWT token
-  isOwner,                 // Original specific middleware
-  restaurantController.createRestaurant
-);
+const { protect } = require('../middlewares/authMiddleware');
+const { ownerOnly } = require('../middlewares/roleMiddleware');
 
-// Alternative role-based protection (choose one approach)
-router.patch(
-  '/:id',
-  authMiddleware,
-  requireRoles(['restaurant_owner', 'admin']), // Flexible multi-role check
-  restaurantController.updateRestaurant
-);
+// OWNER: Add a new restaurant
+router.post('/create', protect, ownerOnly, createRestaurant);
 
-// Admin-only route example
-router.delete(
-  '/:id',
-  authMiddleware,
-  requireRoles(['admin']), // Strict admin requirement
-  restaurantController.deleteRestaurant
-);
+// PUBLIC: Get all restaurants
+router.get('/all', getAllRestaurants);
+
+// PUBLIC: Get specific restaurant details
+router.get('/view/:id', getRestaurantById);
+
+// OWNER: Update existing restaurant
+router.patch('/edit/:id', protect, ownerOnly, updateRestaurant);
+
+// OWNER: Delete restaurant
+router.delete('/remove/:id', protect, ownerOnly, deleteRestaurant);
 
 module.exports = router;

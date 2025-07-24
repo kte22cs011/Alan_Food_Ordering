@@ -1,17 +1,57 @@
 const mongoose = require('mongoose');
 
-const orderSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  restaurant_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true },
-  status: { type: String, enum: ['pending', 'preparing', 'delivered', 'cancelled'], default: 'pending' },
-  delivery_address: { type: String, required: true },
-  total_amount: { type: Number, required: true },
-  items: [{
-    menu_item_id: { type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem' },
-    item_name: { type: String, required: true },
-    quantity: { type: Number, required: true },
-    price_at_order: { type: Number, required: true }
-  }]
-}, { timestamps: true });
+const OrderSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant',
+    required: true,
+  },
+  items: [
+    {
+      itemId: String,
+      name: String,
+      price: Number,
+      quantity: Number,
+    },
+  ],
+  totalAmount: {
+    type: Number,
+    required: true,
+  },
+  discountApplied: {
+    type: Number,
+    default: 0,
+  },
+  finalAmount: {
+    type: Number,
+    required: true,
+  },
+  deliveryAddress: {
+    type: String,
+  },
+  orderStatus: {
+    type: String,
+    default: 'confirmed',
+  },
+  orderId: {
+    type: String,
+  },
+  createdOn: {
+    type: Date,
+    default: Date.now,
+  },
+  isPaid: {
+    type: Boolean,
+    default: false,
+  },
+  paymentMethod: {
+    type: String,
+  },
+});
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model('Order', OrderSchema);
